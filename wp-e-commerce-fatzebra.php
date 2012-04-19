@@ -35,11 +35,21 @@ $nzshpcrt_gateways[$num] = array(
 	'api_version' => 2
 );
 
+$logo_url = WP_PLUGIN_URL . "/wp-e-commerce-fat-zebra-plugin/Fat-Zebra-Certified-small.png";
+
 if ( in_array( 'wpsc_merchant_fatzebra', (array)get_option( 'custom_gateway_options' ) ) ) {
+	if ((boolean)get_option("fatzebra_show_logo")) {
+		$logo_code = '<a href="https://www.fatzebra.com.au/?rel=logo" title="Fat Zebra Certified"><img src="' . $logo_url . '" alt="Fat Zebra Certified" border="0" style="float: right;"/></a>';
+	}
+	else {
+		$logo_code = "";	
+	}
+	
 	$gateway_checkout_form_fields["wpsc_merchant_fatzebra"] = <<<EOF
-	<table>
+	<h4>Payment Details</h4>
+	<table style="border: none; float: left; width: 500px;">
 		<tr>
-			<td>
+			<td style="width: 145px;">
 				<label for="fatzebra_card_holder">
 					Card Holder
 					<span class="asterix">*</span>
@@ -50,7 +60,7 @@ if ( in_array( 'wpsc_merchant_fatzebra', (array)get_option( 'custom_gateway_opti
 			</td>
 		</tr>
 		<tr>
-			<td>
+			<td style="width: 145px;">
 				<label for="fatzebra_card_number">Card Number</label>
 			</td>
 			<td>
@@ -59,7 +69,7 @@ if ( in_array( 'wpsc_merchant_fatzebra', (array)get_option( 'custom_gateway_opti
 		</tr>
 
 		<tr>
-			<td>
+			<td style="width: 145px;">
 				<label for="fatzebra_expiry">Expiry &amp; CCV</label>
 			</td>
 			<td>
@@ -70,7 +80,7 @@ if ( in_array( 'wpsc_merchant_fatzebra', (array)get_option( 'custom_gateway_opti
 			</td>
 		</tr>
 	</table>
-
+	{$logo_code}
 EOF;
 }
 
@@ -176,10 +186,18 @@ class wpsc_merchant_fatzebra extends wpsc_merchant {
 	}
 }
 function submit_fatzebra() {
-	$fields = array("fatzebra_username", "fatzebra_token", "fatzebra_test_mode", "fatzebra_sandbox_mode");
-	foreach($fields as $field):
+	error_log(print_r($_POST, true));
+
+	foreach(array("fatzebra_username", "fatzebra_token") as $field):
 		if (isset($_POST[$field])) {
 			update_option($field, $_POST[$field]);
+		}
+	endforeach;
+
+	// Booleans
+	foreach(array("fatzebra_test_mode", "fatzebra_sandbox_mode", "fatzebra_show_logo") as $field):
+		if (isset($_POST[$field])) {
+			update_option($field, (boolean)$_POST[$field]);
 		}
 	endforeach;
 
@@ -187,6 +205,7 @@ function submit_fatzebra() {
 }
 
 function form_fatzebra() {		
+
 	$fatzebra_username     = get_option('fatzebra_username');
 	$fatzebra_token        = get_option('fatzebra_token');
 	
@@ -196,6 +215,11 @@ function form_fatzebra() {
 	$fatzebra_sandbox_mode = (boolean)get_option('fatzebra_sandbox_mode');
 	$sandbox_checked = $fatzebra_sandbox_mode ? "checked=\"checked\"" : "";
 	
+	$fatzebra_show_logo = (boolean)get_option('fatzebra_show_logo');
+	$logo_checked = $fatzebra_show_logo ? "checked=\"checked\"" : "";
+	
+	$logo_url = WP_PLUGIN_URL . "/wp-e-commerce-fat-zebra-plugin/Fat-Zebra-Certified-small.png";
+
 	/*
 		Create the form
 	*/
@@ -221,7 +245,8 @@ function form_fatzebra() {
 			<td></td>
 			<td>
 				<label for="fatzebra_sandbox_mode">
-					<input type="checkbox" name="fatzebra_sandbox_mode" id="fatzebra_sandbox_mode" value="true" {$sandbox_checked} />
+					<input name="fatzebra_sandbox_mode" type="hidden" value="0" />
+					<input type="checkbox" name="fatzebra_sandbox_mode" id="fatzebra_sandbox_mode" value="1" {$sandbox_checked} />
 					Sandbox Mode
 				</label>
 			</td>
@@ -231,9 +256,26 @@ function form_fatzebra() {
 			<td></td>
 			<td>
 				<label for="fatzebra_test_mode">
-					<input type="checkbox" name="fatzebra_test_mode" id="fatzebra_test_mode" value="true" {$test_checked} />
+					<input name="fatzebra_test_mode" type="hidden" value="0" />
+					<input type="checkbox" name="fatzebra_test_mode" id="fatzebra_test_mode" value="1" {$test_checked} />
 					Test Mode
 				</label>
+			</td>
+		</tr>
+		<tr>
+			<td></td>
+			<td>
+				<label for="fatzebra_show_logo">
+					<input name="fatzebra_show_logo" type="hidden" value="0" />
+					<input type="checkbox" name="fatzebra_show_logo" id="fatzebra_show_logo" value="1" {$logo_checked} />
+					Show Fat Zebra Logo
+				</label>
+			</td>
+		</tr>
+
+		<tr>
+			<td colspan="2" align="center">
+				<a href="https://www.fatzebra.com.au/?rel=certified" title="Fat Zebra Certified"><img src="{$logo_url}" alt="Fat Zebra Certified" /></a>
 			</td>
 		</tr>
 
