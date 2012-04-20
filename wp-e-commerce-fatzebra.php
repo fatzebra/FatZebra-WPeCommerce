@@ -6,7 +6,7 @@ include_once(WP_PLUGIN_DIR . "/wp-e-commerce/wpsc-includes/merchant.class.php");
 Plugin Name: WP eCommerce Fat Zebra Gateway
 Plugin URI: https://www.fatzebra.com.au/help
 Description: Extends WordPress eCommerce with Fat Zebra payment gateway.
-Version: 1.0.1
+Version: 1.0.2
 Author: Fat Zebra
 Author URI: https://www.fatzebra.com.au
 */
