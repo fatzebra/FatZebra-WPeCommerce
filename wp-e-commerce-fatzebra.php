@@ -6,7 +6,7 @@ include_once(WP_PLUGIN_DIR . "/wp-e-commerce/wpsc-includes/merchant.class.php");
 Plugin Name: WP eCommerce Fat Zebra Gateway
 Plugin URI: https://www.fatzebra.com.au/help
 Description: Extends WordPress eCommerce with Fat Zebra payment gateway.
-Version: 1.0.0
+Version: 1.0.1
 Author: Fat Zebra
 Author URI: https://www.fatzebra.com.au
 */
@@ -35,16 +35,23 @@ $nzshpcrt_gateways[$num] = array(
 	'api_version' => 2
 );
 
-$logo_url = WP_PLUGIN_URL . "/wp-e-commerce-fat-zebra-plugin/Fat-Zebra-Certified-small.png";
+$image_path = WP_PLUGIN_URL . "/wp-e-commerce-fat-zebra-plugin/images";
+$logo_url = $image_path . "/Fat-Zebra-Certified-small.png";
 
 if ( in_array( 'wpsc_merchant_fatzebra', (array)get_option( 'custom_gateway_options' ) ) ) {
 	if ((boolean)get_option("fatzebra_show_logo")) {
-		$logo_code = '<a href="https://www.fatzebra.com.au/?rel=logo" title="Fat Zebra Certified"><img src="' . $logo_url . '" alt="Fat Zebra Certified" border="0" style="float: right;"/></a>';
+		$logo_code = '<a href="https://www.fatzebra.com.au/?rel=logo" title="Fat Zebra Certified" target="_blank"><img src="' . $logo_url . '" alt="Fat Zebra Certified" border="0" style="float: right;"/></a>';
 	}
 	else {
 		$logo_code = "";	
 	}
 	
+
+	$card_logos = "";
+	foreach((array)get_option("fatzebra_card_logos") as $key => $value){		
+		$card_logos .= "<img src=\"{$image_path}/" . strtolower($value) . "_32.png\" alt=\"{$value}\" class=\"card_logo\" id=\"card_" . strtolower($value) . "\" /> ";
+	}
+
 	$gateway_checkout_form_fields["wpsc_merchant_fatzebra"] = <<<EOF
 	<h4>Payment Details</h4>
 	<table style="border: none; float: left; width: 500px;">
@@ -61,26 +68,65 @@ if ( in_array( 'wpsc_merchant_fatzebra', (array)get_option( 'custom_gateway_opti
 		</tr>
 		<tr>
 			<td style="width: 145px;">
-				<label for="fatzebra_card_number">Card Number</label>
+				<label for="fatzebra_card_number">
+					Card Number
+					<span class="asterix">*</span>
+				</label>
 			</td>
 			<td>
 				<input type="text" name="fatzebra[card_number]" id="fatzebra_card_number" class="required text intra-field-label" value="{$_POST['fatzebra']['card_number']}" />
+				<br />
+				{$card_logos}
 			</td>
 		</tr>
 
 		<tr>
 			<td style="width: 145px;">
-				<label for="fatzebra_expiry">Expiry &amp; CCV</label>
+				<label for="fatzebra_expiry">
+					Expiry &amp; CVV
+					<span class="asterix">*</span>
+				</label>
+
 			</td>
 			<td>
 				<input type="text" name="fatzebra[expiry_month]" id="fatzebra_expiry_month" class="required" size="2" placeholder="MM" value="{$_POST['fatzebra']['expiry_month']}" /> / 
 				<input type="text" name="fatzebra[expiry_year]" id="fatzebra_expiry_year" class="required" size="4" placeholder="YYYY" value="{$_POST['fatzebra']['expiry_year']}"/>
 
-				<input type="text" name="fatzebra[cvv]" id="fatzebra_ccv" class="required" size="4" placeholder="cvv"/>
+				<input type="text" name="fatzebra[cvv]" id="fatzebra_cvv" class="required" size="4" placeholder="CVV"/>
 			</td>
 		</tr>
 	</table>
 	{$logo_code}
+EOF;
+
+$gateway_checkout_form_fields["wpsc_merchant_fatzebra"] .= <<<EOF
+	<script type="text/javascript">
+			jQuery(function() {
+				jQuery("#fatzebra_card_number").live("keyup", function() {
+					var value = jQuery(this).val();
+					if(value.length === 0) {
+						jQuery("img.card_logo").css({opacity: 1.0});
+						return;
+					}
+
+					var card_id;
+					if(value.match(/^4/)) card_id = "card_visa";
+					if(value.match(/^5/)) card_id = "card_mastercard";
+					if(value.match(/^(34|37)/)) card_id = "card_american_express";
+					if(value.match(/^(36)/)) card_id = "card_diners_club";
+					if(value.match(/^(35)/)) card_id = "card_jcb";
+					if(value.match(/^(65)/)) card_id = "card_discover";
+
+					jQuery("img.card_logo").each(function() {
+						if(jQuery(this).attr("id") != card_id) {
+							jQuery(this).css({opacity: 0.5});
+						} else {
+							jQuery(this).css({opacity: 1.0});
+						}
+					});
+				});
+			});
+		</script>
 EOF;
 }
 
@@ -186,9 +232,7 @@ class wpsc_merchant_fatzebra extends wpsc_merchant {
 	}
 }
 function submit_fatzebra() {
-	error_log(print_r($_POST, true));
-
-	foreach(array("fatzebra_username", "fatzebra_token") as $field):
+	foreach(array("fatzebra_username", "fatzebra_token", "fatzebra_card_logos") as $field):
 		if (isset($_POST[$field])) {
 			update_option($field, $_POST[$field]);
 		}
@@ -218,7 +262,13 @@ function form_fatzebra() {
 	$fatzebra_show_logo = (boolean)get_option('fatzebra_show_logo');
 	$logo_checked = $fatzebra_show_logo ? "checked=\"checked\"" : "";
 	
-	$logo_url = WP_PLUGIN_URL . "/wp-e-commerce-fat-zebra-plugin/Fat-Zebra-Certified-small.png";
+	$fatzebra_card_logos = (array)get_option('fatzebra_card_logos');
+	$visa_selected = in_array("visa", $fatzebra_card_logos) ? "selected=\"selected\"" : "";
+	$mastercard_selected = in_array("mastercard", $fatzebra_card_logos) ? "selected=\"selected\"" : "";
+	$amex_selected = in_array("american_express", $fatzebra_card_logos) ? "selected=\"selected\"" : "";
+	$jcb_selected = in_array("jcb", $fatzebra_card_logos) ? "selected=\"selected\"" : "";
+
+	$logo_url = WP_PLUGIN_URL . "/wp-e-commerce-fat-zebra-plugin/images/Fat-Zebra-Certified-small.png";
 
 	/*
 		Create the form
@@ -270,6 +320,20 @@ function form_fatzebra() {
 					<input type="checkbox" name="fatzebra_show_logo" id="fatzebra_show_logo" value="1" {$logo_checked} />
 					Show Fat Zebra Logo
 				</label>
+			</td>
+		</tr>
+		<tr>
+			<th>
+				<label for="fatzebra_card_logos">Card Logos</label>
+			</th>
+			<td>
+				<select multiple="multiple" name="fatzebra_card_logos[]" id="fatzebra_card_logos">
+					<option value="visa" {$visa_selected}>VISA</option>
+					<option value="mastercard" {$mastercard_selected}>MasterCard</option>
+					<option value="american_express" {$amex_selected}>American Express</option>
+					<option value="jcb" {$jcb_selected}>JCB</option>
+					
+				</select>
 			</td>
 		</tr>
 
