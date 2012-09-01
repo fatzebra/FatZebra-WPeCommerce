@@ -6,7 +6,7 @@ include_once(WP_PLUGIN_DIR . "/wp-e-commerce/wpsc-includes/merchant.class.php");
 Plugin Name: WP eCommerce Fat Zebra Gateway
 Plugin URI: https://www.fatzebra.com.au/help
 Description: Extends WordPress eCommerce with Fat Zebra payment gateway.
-Version: 1.0.2
+Version: 1.0.3
 Author: Fat Zebra
 Author URI: https://www.fatzebra.com.au
 */
@@ -145,7 +145,7 @@ class wpsc_merchant_fatzebra extends wpsc_merchant {
 		
 		$url = $sandbox_mode ? "https://gateway.sandbox.fatzebra.com.au/v1.0/purchases" : "https://gateway.fatzebra.com.au/v1.0/purchases";
 		$params = array();
-		$params["test"] = $test_mode ? "true" : "false";
+		$params["test"] = $test_mode ? true : false;
 		$params["reference"] = $purchase_log[0]["id"];
 		$params["amount"] = $real_amount;
 		$params["card_number"] = $_POST['fatzebra']['card_number'];
@@ -183,7 +183,7 @@ class wpsc_merchant_fatzebra extends wpsc_merchant {
 				'body' => $data,
 				'headers' => array(
 					'Authorization' => 'Basic ' . base64_encode($username . ":" . $token),
-					'X-Test-Mode' => $test_mode ? "true" : "false"
+					'X-Test-Mode' => $test_mode ? true : false
 				),
 				'timeout' => 30
 			);

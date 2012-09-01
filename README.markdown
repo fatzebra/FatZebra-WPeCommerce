@@ -1,7 +1,7 @@
 Fat Zebra WP e-Commerce Plugin
 ==============================
 
-Version 1.0.0 for API Version 1.0
+Version 1.0.3 for API Version 1.0
 
 A WordPress plugin to add Fat Zebra support to [WP e-Commerce](http://www.getshopped.org) for Australian Merchants.
 
